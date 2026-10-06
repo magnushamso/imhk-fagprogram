@@ -331,18 +331,28 @@ body { font-family: 'Inter', system-ui, sans-serif; font-size: 13px; background:
 }
 .add-grand-btn:hover { opacity: .9; }
 
-/* Session label */
-.session-label {
-  background: var(--surface2);
-  border-left: 3px solid var(--teal);
-  padding: 6px 10px;
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--teal-dark);
-  margin: 8px 0 4px;
-  display: flex; align-items: center; justify-content: space-between;
+/* Session block */
+.session-block {
+  border: 2px solid var(--teal);
+  border-radius: var(--radius);
+  margin: 10px 0;
+  overflow: hidden;
 }
+.session-block-header {
+  background: var(--teal);
+  color: #fff;
+  padding: 7px 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.session-block-title { font-weight: 700; font-size: 13px; }
+.session-block-chair { font-size: 11px; opacity: .85; }
+.session-block-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.session-block-btn {
+  background: rgba(255,255,255,.2); border: none; cursor: pointer;
+  color: #fff; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600;
+}
+.session-block-btn:hover { background: rgba(255,255,255,.35); }
+.session-block-body { padding: 4px 8px; }
 
 /* Modal */
 .modal-overlay {
@@ -489,14 +499,6 @@ body { font-family: 'Inter', system-ui, sans-serif; font-size: 13px; background:
         <label class="field-label">Farge</label>
         <div class="color-swatches" id="colorSwatches"></div>
       </div>
-      <div class="field-group">
-        <label class="field-label">Sesjonstittel</label>
-        <input class="field-input" id="editSessionTitle" placeholder="F.eks. Skulder og hofte">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Møteleder</label>
-        <input class="field-input" id="editSessionChair" placeholder="Navn på møteleder">
-      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-red btn-sm" id="editDeleteBtn" onclick="deleteCurrentSlot()">Slett</button>
@@ -524,6 +526,29 @@ body { font-family: 'Inter', system-ui, sans-serif; font-size: 13px; background:
     <div class="modal-footer">
       <button class="btn btn-outline btn-sm" onclick="document.getElementById('importModal').hidden=true">Avbryt</button>
       <button class="btn btn-blue btn-sm" onclick="doImport()">Importer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Session modal -->
+<div class="modal-overlay" id="sessionModal" hidden onclick="if(event.target===this)this.hidden=true">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:500px">
+    <div class="modal-header">
+      <span id="sessionModalTitle">Rediger sesjon</span>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('sessionModal').hidden=true">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group"><label class="field-label">Sesjonstittel</label><input class="field-input" id="sessionTitle" placeholder="F.eks. Skulder og hofte"></div>
+      <div class="field-group"><label class="field-label">Møteleder</label><input class="field-input" id="sessionChair" placeholder="Navn på møteleder"></div>
+      <div class="field-group">
+        <label class="field-label">Velg foredrag som inngår i sesjonen</label>
+        <div id="sessionSlotPicker" style="display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-red btn-sm" id="sessionDeleteBtn" onclick="deleteSession()" style="display:none">Slett sesjon</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('sessionModal').hidden=true">Avbryt</button>
+      <button class="btn btn-blue btn-sm" onclick="saveSession()">Lagre sesjon</button>
     </div>
   </div>
 </div>
@@ -689,20 +714,50 @@ function renderHallBlock(day, di, hall, hi, mode) {
   let html = `<div class="hall-block">
     <div class="hall-header ${headerClass}">
       <span>${name}</span>
-      <button class="hall-del-btn" onclick="deleteHall(${di},${hi})" title="Slett sal">🗑</button>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="hall-del-btn" onclick="openNewSession(${di},${hi})" title="Ny sesjon" style="font-size:11px;width:auto;padding:2px 7px">+ Sesjon</button>
+        <button class="hall-del-btn" onclick="deleteHall(${di},${hi})" title="Slett sal">🗑</button>
+      </div>
     </div>`;
-
-  if (hall.session_title || hall.session_chair) {
-    html += `<div class="session-label">
-      <span>📋 ${esc(hall.session_title || '')}${hall.session_chair ? ' · Møteleder: ' + esc(hall.session_chair) : ''}</span>
-    </div>`;
-  }
 
   html += '<div class="hall-col-inner">';
-  (hall.slots || []).forEach((slot, si) => {
+
+  // Group slots by session, preserving order
+  const slots = hall.slots || [];
+  const sessions = hall.sessions || [];
+
+  // Build a map: sessionId → session
+  const sessMap = {};
+  sessions.forEach(s => { sessMap[s.id] = s; });
+
+  // Walk slots; when session changes, open/close session blocks
+  let currentSessId = null;
+  slots.forEach((slot, si) => {
+    const sid = slot.session_id || null;
+    if (sid !== currentSessId) {
+      // Close previous session block if open
+      if (currentSessId !== null) html += '</div></div>'; // body + block
+      currentSessId = sid;
+      if (sid && sessMap[sid]) {
+        const sess = sessMap[sid];
+        html += `<div class="session-block">
+          <div class="session-block-header">
+            <div>
+              <div class="session-block-title">${esc(sess.title)}</div>
+              ${sess.chair ? `<div class="session-block-chair">👤 Møteleder: ${esc(sess.chair)}</div>` : ''}
+            </div>
+            <div class="session-block-actions">
+              <button class="session-block-btn" onclick="openEditSession(${di},${hi},'${sess.id}')">✏️ Rediger</button>
+            </div>
+          </div>
+          <div class="session-block-body">`;
+      }
+    }
     html += renderSlotRow(di, hi, si, slot);
   });
-  html += '</div>';
+  if (currentSessId !== null) html += '</div></div>'; // close last session block
+
+  html += '</div>'; // hall-col-inner
 
   html += `<div style="padding:8px 2px">
     <button class="btn btn-outline btn-sm" style="width:100%" onclick="addSlot(${di},${hi})">+ Legg til slot</button>
@@ -757,8 +812,111 @@ function openEdit(di, hi, si) {
 
 function openSessionEdit(di, hi, si) {
   openEdit(di, hi, si);
-  // Focus session fields
   setTimeout(() => document.getElementById('editSessionTitle').focus(), 50);
+}
+
+// ── Session management ─────────────────────────────────────────────
+let sessionCtx = null; // {di, hi, sessId|null}
+
+function ensureSessions(hall) {
+  if (!hall.sessions) hall.sessions = [];
+}
+
+function openNewSession(di, hi) {
+  const hall = data.schedules[di].halls[hi];
+  ensureSessions(hall);
+  sessionCtx = {di, hi, sessId: null};
+  document.getElementById('sessionModalTitle').textContent = 'Ny sesjon';
+  document.getElementById('sessionTitle').value = '';
+  document.getElementById('sessionChair').value = '';
+  document.getElementById('sessionDeleteBtn').style.display = 'none';
+  renderSessionSlotPicker(di, hi, null);
+  document.getElementById('sessionModal').hidden = false;
+}
+
+function openEditSession(di, hi, sessId) {
+  const hall = data.schedules[di].halls[hi];
+  ensureSessions(hall);
+  const sess = hall.sessions.find(s => s.id === sessId);
+  if (!sess) return;
+  sessionCtx = {di, hi, sessId};
+  document.getElementById('sessionModalTitle').textContent = 'Rediger sesjon';
+  document.getElementById('sessionTitle').value = sess.title || '';
+  document.getElementById('sessionChair').value = sess.chair || '';
+  document.getElementById('sessionDeleteBtn').style.display = '';
+  renderSessionSlotPicker(di, hi, sessId);
+  document.getElementById('sessionModal').hidden = false;
+}
+
+function renderSessionSlotPicker(di, hi, currentSessId) {
+  const hall = data.schedules[di].halls[hi];
+  const slots = hall.slots || [];
+  const el = document.getElementById('sessionSlotPicker');
+  if (slots.length === 0) {
+    el.innerHTML = '<div style="color:var(--fg3);font-size:12px">Ingen slots i denne salen ennå.</div>';
+    return;
+  }
+  el.innerHTML = slots.map((slot, si) => {
+    const lec = slot.lecture || {};
+    const checked = slot.session_id === currentSessId && currentSessId !== null;
+    const inOther = slot.session_id && slot.session_id !== currentSessId;
+    return `<label style="display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:4px;cursor:${inOther?'default':'pointer'};background:${inOther?'var(--surface2)':'transparent'};opacity:${inOther?.5:1}">
+      <input type="checkbox" data-si="${si}" ${checked?'checked':''} ${inOther?'disabled':''}>
+      <span style="font-size:12px"><strong>${esc(slot.time||'')}</strong> ${esc(lec.title||'(tom slot)')}${inOther?' <em style="color:var(--fg3)">(annen sesjon)</em>':''}</span>
+    </label>`;
+  }).join('');
+}
+
+function saveSession() {
+  if (!sessionCtx) return;
+  const {di, hi, sessId} = sessionCtx;
+  const hall = data.schedules[di].halls[hi];
+  ensureSessions(hall);
+  const title = document.getElementById('sessionTitle').value.trim();
+  const chair = document.getElementById('sessionChair').value.trim();
+  if (!title) { toast('Sesjonstittel mangler'); return; }
+
+  // Which slots are checked?
+  const checked = new Set();
+  document.querySelectorAll('#sessionSlotPicker input[type=checkbox]:checked').forEach(cb => {
+    checked.add(+cb.dataset.si);
+  });
+
+  let id = sessId;
+  if (!id) {
+    id = 'sess-' + Date.now();
+    hall.sessions.push({id, title, chair});
+  } else {
+    const sess = hall.sessions.find(s => s.id === id);
+    if (sess) { sess.title = title; sess.chair = chair; }
+  }
+
+  // Assign / unassign session_id on slots
+  (hall.slots || []).forEach((slot, si) => {
+    if (checked.has(si)) {
+      slot.session_id = id;
+    } else if (slot.session_id === id) {
+      delete slot.session_id;
+    }
+  });
+
+  document.getElementById('sessionModal').hidden = true;
+  saveState();
+  renderSchedule();
+  toast('Sesjon lagret ✓');
+}
+
+function deleteSession() {
+  if (!sessionCtx || !sessionCtx.sessId) return;
+  const {di, hi, sessId} = sessionCtx;
+  const hall = data.schedules[di].halls[hi];
+  ensureSessions(hall);
+  hall.sessions = hall.sessions.filter(s => s.id !== sessId);
+  (hall.slots || []).forEach(slot => { if (slot.session_id === sessId) delete slot.session_id; });
+  document.getElementById('sessionModal').hidden = true;
+  saveState();
+  renderSchedule();
+  toast('Sesjon slettet');
 }
 
 const SWATCH_COLORS = ['green','teal','blue','pink','orange','purple','yellow','cyan'];
@@ -786,8 +944,6 @@ function saveEdit() {
   slot.lecture.speaker = document.getElementById('editSpeaker').value;
   slot.lecture.color   = selectedColor;
   slot.lecture.duration = +document.getElementById('editDur').value || 20;
-  slot.lecture.session_title = document.getElementById('editSessionTitle').value;
-  slot.lecture.session_chair = document.getElementById('editSessionChair').value;
   slot.time     = document.getElementById('editTime').value;
   slot.duration = slot.lecture.duration;
   document.getElementById('editModal').hidden = true;
