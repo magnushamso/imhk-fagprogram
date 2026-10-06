@@ -442,6 +442,30 @@ body { font-family: 'Inter', system-ui, sans-serif; font-size: 13px; background:
   </div>
 </div>
 
+<!-- Confirm modal -->
+<div class="modal-overlay" id="confirmModal" hidden onclick="if(event.target===this)closeConfirm(false)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:360px">
+    <div class="modal-header"><span id="confirmTitle">Er du sikker?</span></div>
+    <div class="modal-body"><p id="confirmMsg" style="font-size:13px;color:var(--fg2)"></p></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeConfirm(false)">Avbryt</button>
+      <button class="btn btn-red btn-sm" id="confirmOkBtn" onclick="closeConfirm(true)">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Prompt modal -->
+<div class="modal-overlay" id="promptModal" hidden onclick="if(event.target===this)closePrompt(null)">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:360px">
+    <div class="modal-header"><span id="promptTitle">Skriv inn</span></div>
+    <div class="modal-body"><input class="field-input" id="promptInput" style="width:100%"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closePrompt(null)">Avbryt</button>
+      <button class="btn btn-blue btn-sm" onclick="closePrompt(document.getElementById('promptInput').value)">OK</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modals -->
 <div class="modal-overlay" id="editModal" hidden onclick="if(event.target===this)this.hidden=true">
   <div class="modal" onclick="event.stopPropagation()">
@@ -827,21 +851,27 @@ function addHall(di) {
 }
 
 function deleteHall(di, hi) {
-  if (!confirm('Slette denne salen og alle dens slots?')) return;
-  data.schedules[di].halls.splice(hi, 1);
-  saveState();
-  renderSchedule();
+  showConfirm('Slett sal', 'Slette denne salen og alle dens slots?', 'Slett', () => {
+    data.schedules[di].halls.splice(hi, 1);
+    saveState();
+    renderSchedule();
+  });
 }
 
 function addDayLabel(di) {
-  const label = prompt('Dag-label (f.eks. Fredag):');
-  if (label) { data.schedules[di].header = label; saveState(); renderSchedule(); }
+  showPrompt('Dag-label', 'f.eks. Fredag', val => {
+    data.schedules[di].header = val; saveState(); renderSchedule();
+  });
 }
 
 // ── Export / Import ────────────────────────────────────────────────
 function exportJSON() {
-  document.getElementById('exportTextarea').value = JSON.stringify(data, null, 2);
-  document.getElementById('exportModal').hidden = false;
+  const modal = document.getElementById('exportModal');
+  modal.hidden = false;
+  // Set value after modal is visible so textarea has rendered dimensions
+  requestAnimationFrame(() => {
+    document.getElementById('exportTextarea').value = JSON.stringify(data, null, 2);
+  });
 }
 function copyExport() {
   navigator.clipboard.writeText(document.getElementById('exportTextarea').value)
@@ -872,28 +902,54 @@ function exportPDF() {
 }
 
 function restoreSchedule() {
-  if (!confirm('Gjenopprett opprinnelig timeplan? (fjerner lokale endringer)')) return;
-  data = JSON.parse(JSON.stringify(DEFAULT_DATA));
-  saveState();
-  activeDay = 0;
-  render();
-  toast('Gjenopprettet ✓');
+  showConfirm('Gjenopprett timeplan', 'Fjerner alle lokale endringer og gjenoppretter original IMHK 2026-data.', 'Gjenopprett', () => {
+    data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    saveState(); activeDay = 0; render(); toast('Gjenopprettet ✓');
+  });
 }
 
 function resetAll() {
-  if (!confirm('Nullstill alt? Dette kan ikke angres.')) return;
-  localStorage.removeItem('imhk_timetable');
-  data = JSON.parse(JSON.stringify(DEFAULT_DATA));
-  saveState();
-  activeDay = 0;
-  render();
-  toast('Nullstilt ✓');
+  showConfirm('Nullstill alt', 'Dette sletter all data. Kan ikke angres.', 'Nullstill', () => {
+    localStorage.removeItem('imhk_timetable');
+    data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    saveState(); activeDay = 0; render(); toast('Nullstilt ✓');
+  });
 }
 
 function openAddLecture() {
   // Add empty slot to first hall of active day
   const halls = data.schedules[activeDay].halls;
   if (halls.length) addSlot(activeDay, 0);
+}
+
+// ── Confirm / Prompt helpers (no native dialogs) ───────────────────
+let _confirmCb = null;
+function showConfirm(title, msg, okLabel, cb) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmOkBtn').textContent = okLabel || 'OK';
+  _confirmCb = cb;
+  document.getElementById('confirmModal').hidden = false;
+}
+function closeConfirm(ok) {
+  document.getElementById('confirmModal').hidden = true;
+  if (_confirmCb) { const cb = _confirmCb; _confirmCb = null; if (ok) cb(); }
+}
+
+let _promptCb = null;
+function showPrompt(title, placeholder, cb) {
+  document.getElementById('promptTitle').textContent = title;
+  const inp = document.getElementById('promptInput');
+  inp.value = '';
+  inp.placeholder = placeholder || '';
+  _promptCb = cb;
+  document.getElementById('promptModal').hidden = false;
+  setTimeout(() => inp.focus(), 50);
+  inp.onkeydown = e => { if (e.key === 'Enter') closePrompt(inp.value); };
+}
+function closePrompt(val) {
+  document.getElementById('promptModal').hidden = true;
+  if (_promptCb) { const cb = _promptCb; _promptCb = null; if (val !== null && val !== '') cb(val); }
 }
 
 // ── Utils ──────────────────────────────────────────────────────────
