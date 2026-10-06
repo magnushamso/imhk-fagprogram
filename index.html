@@ -1,0 +1,913 @@
+<title>IMHK Kjøreplan 2026</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* ── Tokens ──────────────────────────────────────────────────────── */
+:root {
+  --bg:          #f5f5f5;
+  --surface:     #ffffff;
+  --surface2:    #f0f0f0;
+  --border:      #e0e0e0;
+  --fg:          #1a1a1a;
+  --fg2:         #555;
+  --fg3:         #999;
+  --teal:        #42bba2;
+  --teal-dark:   #2d9b85;
+  --blue:        #3b82f6;
+  --blue-dark:   #2563eb;
+  --purple:      #a855f7;
+  --red:         #ef4444;
+  --green-btn:   #22c55e;
+  --orange-btn:  #f97316;
+  --session-btn: #22c55e;
+  --shadow-sm:   0 1px 2px rgba(0,0,0,.06);
+  --shadow:      0 2px 8px rgba(0,0,0,.1);
+  --radius:      8px;
+  --radius-sm:   5px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:        #1a1a1a;
+    --surface:   #252525;
+    --surface2:  #2e2e2e;
+    --border:    #3a3a3a;
+    --fg:        #f0f0f0;
+    --fg2:       #aaa;
+    --fg3:       #666;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
+    --shadow:    0 2px 8px rgba(0,0,0,.4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:        #1a1a1a; --surface:#252525; --surface2:#2e2e2e;
+  --border:#3a3a3a; --fg:#f0f0f0; --fg2:#aaa; --fg3:#666; color-scheme:dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: 'Inter', system-ui, sans-serif; font-size: 13px; background: var(--bg); color: var(--fg); }
+
+/* ── App shell ───────────────────────────────────────────────────── */
+.app { display: flex; flex-direction: column; height: 100%; }
+
+/* Top bar */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-shrink: 0;
+  padding: 0 20px;
+  position: relative;
+}
+.topbar-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 18px; font-weight: 700;
+}
+.topbar-title svg { color: var(--blue); }
+.topbar-save {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--teal-dark); top: 38px;
+}
+.topbar-actions { position: absolute; right: 20px; display: flex; gap: 6px; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 12px; border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 600; font-family: inherit;
+  cursor: pointer; border: none; transition: opacity .12s, transform .08s;
+  color: #fff; white-space: nowrap;
+}
+.btn:active { transform: scale(.97); opacity: .9; }
+.btn-blue   { background: var(--blue); }
+.btn-green  { background: var(--green-btn); }
+.btn-orange { background: var(--orange-btn); }
+.btn-teal   { background: var(--teal); }
+.btn-red    { background: var(--red); }
+.btn-outline {
+  background: var(--surface); color: var(--fg);
+  border: 1px solid var(--border);
+}
+.btn-outline:hover { background: var(--surface2); }
+.btn-sm { padding: 3px 8px; font-size: 11px; }
+
+/* ── Main area ───────────────────────────────────────────────────── */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* Left panel */
+.left-panel {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.left-panel-header {
+  padding: 14px 14px 10px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.left-panel-title { font-weight: 700; font-size: 13px; }
+.left-panel-body { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+
+/* Lecture cards (left panel) */
+.lec-card {
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  cursor: grab;
+  user-select: none;
+  transition: opacity .12s, transform .12s;
+  color: #fff;
+  font-weight: 500;
+}
+.lec-card:active { cursor: grabbing; transform: scale(.98); }
+.lec-card-title { font-size: 12.5px; font-weight: 600; margin-bottom: 3px; line-height: 1.3; }
+.lec-card-speaker { font-size: 11px; opacity: .85; margin-bottom: 4px; }
+.lec-card-dur { font-size: 11px; opacity: .75; display: flex; align-items: center; gap: 3px; }
+
+.c-green  { background: #4ade80; color: #1a3a1a; }
+.c-teal   { background: #22d3c8; color: #0a2a28; }
+.c-blue   { background: #60a5fa; color: #0a1a3a; }
+.c-pink   { background: #f472b6; color: #3a0a20; }
+.c-orange { background: #fb923c; color: #3a1a0a; }
+.c-purple { background: #c084fc; color: #1a0a3a; }
+.c-yellow { background: #fde047; color: #3a3000; }
+.c-cyan   { background: #67e8f9; color: #0a2a30; }
+
+/* ── Schedule area ───────────────────────────────────────────────── */
+.schedule-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  background: var(--bg);
+}
+
+/* Day tabs */
+.day-tabs {
+  display: flex;
+  padding: 16px 16px 0;
+  gap: 8px;
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.day-tab {
+  flex: 1; max-width: 240px;
+  padding: 10px 16px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  cursor: pointer;
+  text-align: center;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--fg2);
+  transition: background .12s, color .12s;
+}
+.day-tab.active {
+  background: var(--blue);
+  color: #fff;
+  border-color: var(--blue);
+}
+.day-tab-sub { font-size: 11px; font-weight: 400; opacity: .8; }
+
+/* Day body */
+.day-body {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--blue);
+  margin: 0 16px 24px;
+  border-radius: 0 0 var(--radius) var(--radius);
+  padding: 16px;
+}
+.day-title { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+.day-date { font-size: 12px; color: var(--fg2); margin-bottom: 4px; }
+.day-hours { font-size: 12px; color: var(--fg3); margin-bottom: 12px; }
+.day-label-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px;
+}
+.day-label-bar {
+  width: 3px; height: 18px; border-radius: 2px; background: var(--blue);
+}
+.day-label-text { font-weight: 700; font-size: 13px; }
+
+/* Hall header */
+.hall-header {
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.hall-header-grand { background: #9333ea; }
+.hall-header-parallel { background: #3b82f6; }
+.hall-del-btn {
+  background: rgba(255,255,255,.2);
+  border: none; cursor: pointer; color: #fff;
+  width: 22px; height: 22px; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.hall-del-btn:hover { background: rgba(255,255,255,.35); }
+
+/* Parallel halls container */
+.parallel-halls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+.hall-col { display: flex; flex-direction: column; }
+.hall-col-inner { display: flex; flex-direction: column; gap: 0; }
+
+/* Single hall block */
+.hall-block { margin-bottom: 12px; }
+
+/* Slot row */
+.slot-row {
+  border-bottom: 1px solid var(--border);
+  padding: 6px 0;
+}
+.slot-row:last-child { border-bottom: none; }
+.slot-meta {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 2px;
+}
+.slot-time {
+  font-size: 12px; font-weight: 600;
+  color: var(--fg2);
+  min-width: 42px;
+  font-variant-numeric: tabular-nums;
+}
+.slot-dur { font-size: 11px; color: var(--fg3); margin-right: auto; }
+.session-btn {
+  padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;
+  background: var(--session-btn); color: #fff; border: none; cursor: pointer;
+  transition: opacity .12s;
+}
+.session-btn:hover { opacity: .85; }
+.slot-controls { display: flex; align-items: center; gap: 3px; }
+.slot-ctrl-btn {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: none; cursor: pointer; font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+  transition: opacity .12s;
+}
+.slot-ctrl-plus  { background: #22c55e; color: #fff; }
+.slot-ctrl-minus { background: #ef4444; color: #fff; }
+.slot-ctrl-btn:hover { opacity: .8; }
+.slot-drag-btn {
+  background: none; border: none; cursor: grab; color: var(--fg3);
+  padding: 2px; font-size: 14px;
+}
+
+/* Lecture block inside slot */
+.lecture-block {
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin-top: 3px;
+  cursor: pointer;
+  transition: filter .12s;
+  position: relative;
+}
+.lecture-block:hover { filter: brightness(.95); }
+.lecture-title { font-size: 12.5px; font-weight: 600; line-height: 1.35; margin-bottom: 3px; }
+.lecture-speaker { font-size: 11px; opacity: .8; margin-bottom: 3px; }
+.lecture-dur { font-size: 11px; opacity: .7; display: flex; align-items: center; gap: 3px; }
+.lecture-edit-overlay {
+  display: none;
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.15);
+  border-radius: var(--radius-sm);
+  align-items: center; justify-content: center;
+  gap: 6px;
+}
+.lecture-block:hover .lecture-edit-overlay { display: flex; }
+
+/* Add header dashed */
+.add-header-btn {
+  width: 100%;
+  border: 1.5px dashed var(--border);
+  background: none;
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  color: var(--fg3);
+  font-size: 12px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: border-color .12s, color .12s;
+}
+.add-header-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+/* Add Grand Hall btn */
+.add-grand-btn {
+  float: right;
+  background: var(--purple);
+  color: #fff;
+  border: none;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 4px;
+}
+.add-grand-btn:hover { opacity: .9; }
+
+/* Session label */
+.session-label {
+  background: var(--surface2);
+  border-left: 3px solid var(--teal);
+  padding: 6px 10px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--teal-dark);
+  margin: 8px 0 4px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.4);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 50; padding: 20px;
+}
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  width: 100%; max-width: 480px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.modal-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  font-weight: 700;
+}
+.modal-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.modal-footer { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+.field-group { display: flex; flex-direction: column; gap: 4px; }
+.field-label { font-size: 11px; font-weight: 600; color: var(--fg2); text-transform: uppercase; letter-spacing: .05em; }
+.field-input {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 7px 10px; font-size: 13px; font-family: inherit;
+  background: var(--bg); color: var(--fg);
+}
+.field-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
+.color-swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+.color-swatch {
+  width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; transition: border-color .1s;
+}
+.color-swatch.selected { border-color: var(--fg); }
+
+/* Toast */
+#toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--fg); color: var(--bg);
+  padding: 9px 18px; border-radius: 99px; font-size: 13px; font-weight: 500;
+  box-shadow: var(--shadow); transition: transform .25s cubic-bezier(.34,1.56,.64,1), opacity .25s;
+  opacity: 0; pointer-events: none; z-index: 100;
+}
+#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* JSON textarea */
+.json-textarea {
+  width: 100%; height: 200px; font-family: monospace; font-size: 11px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 8px; background: var(--bg); color: var(--fg); resize: vertical;
+}
+
+@media (max-width: 700px) {
+  .left-panel { display: none; }
+  .parallel-halls { grid-template-columns: 1fr; }
+  .topbar-title span { display: none; }
+}
+</style>
+
+<div class="app">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-title">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      <span>Conference Timetable</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-blue" onclick="exportPDF()">⬇ PDF</button>
+      <button class="btn btn-green" onclick="exportJSON()">⬆ Export</button>
+      <button class="btn btn-teal" onclick="importJSON()">⬇ Import</button>
+      <button class="btn btn-orange" onclick="restoreSchedule()">↺ Restore Schedule</button>
+      <button class="btn btn-red" onclick="resetAll()">✕ Reset</button>
+    </div>
+  </div>
+  <div style="text-align:center;font-size:11px;color:var(--teal-dark);padding:4px 0;background:var(--surface);border-bottom:1px solid var(--border)" id="saveStatus">
+    ● Cloud sync enabled · Auto-saves
+  </div>
+
+  <div class="main">
+    <!-- Left panel -->
+    <div class="left-panel">
+      <div class="left-panel-header">
+        <span class="left-panel-title">Available Lectures</span>
+        <button class="btn btn-blue btn-sm" onclick="openAddLecture()">+ Add New</button>
+      </div>
+      <div class="left-panel-body" id="lectureBank"></div>
+    </div>
+
+    <!-- Schedule -->
+    <div class="schedule-area" id="scheduleArea">
+      <!-- rendered by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="editModal" hidden onclick="if(event.target===this)this.hidden=true">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span id="editModalTitle">Rediger foredrag</span>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('editModal').hidden=true">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group"><label class="field-label">Tittel</label><input class="field-input" id="editTitle"></div>
+      <div class="field-group"><label class="field-label">Foredragsholder</label><input class="field-input" id="editSpeaker"></div>
+      <div class="field-group">
+        <label class="field-label">Tid (HH:MM)</label>
+        <input class="field-input" id="editTime" placeholder="09:30">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Varighet (minutter)</label>
+        <input class="field-input" type="number" id="editDur" min="5" max="180">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Farge</label>
+        <div class="color-swatches" id="colorSwatches"></div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Sesjonstittel</label>
+        <input class="field-input" id="editSessionTitle" placeholder="F.eks. Skulder og hofte">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Møteleder</label>
+        <input class="field-input" id="editSessionChair" placeholder="Navn på møteleder">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-red btn-sm" id="editDeleteBtn" onclick="deleteCurrentSlot()">Slett</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('editModal').hidden=true">Avbryt</button>
+      <button class="btn btn-blue btn-sm" onclick="saveEdit()">Lagre</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="importModal" hidden onclick="if(event.target===this)this.hidden=true">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span>Importer JSON</span>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('importModal').hidden=true">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--fg2)">Lim inn JSON fra Figma/Eventee eller en tidligere eksport:</p>
+      <textarea class="json-textarea" id="importTextarea" placeholder='{"schedules":[...]}'></textarea>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+        <input type="file" accept=".json" onchange="loadFile(event)" style="display:none" id="fileInput">
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('fileInput').click()">📂 Last opp fil</button>
+        <span style="color:var(--fg3)">eller lim inn ovenfor</span>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('importModal').hidden=true">Avbryt</button>
+      <button class="btn btn-blue btn-sm" onclick="doImport()">Importer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="exportModal" hidden onclick="if(event.target===this)this.hidden=true">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span>Eksporter JSON</span>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('exportModal').hidden=true">✕</button>
+    </div>
+    <div class="modal-body">
+      <textarea class="json-textarea" id="exportTextarea" readonly></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('exportModal').hidden=true">Lukk</button>
+      <button class="btn btn-blue btn-sm" onclick="copyExport()">📋 Kopier</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<input type="file" id="hiddenFileInput" accept=".json" style="display:none" onchange="loadFile(event)">
+
+<script>
+// ── Colors ─────────────────────────────────────────────────────────
+const COLORS = {
+  green:  { bg: '#4ade80', fg: '#1a3a1a' },
+  teal:   { bg: '#22d3c8', fg: '#0a2a28' },
+  blue:   { bg: '#60a5fa', fg: '#0a1a3a' },
+  pink:   { bg: '#f472b6', fg: '#3a0a20' },
+  orange: { bg: '#fb923c', fg: '#3a1a0a' },
+  purple: { bg: '#c084fc', fg: '#1a0a3a' },
+  yellow: { bg: '#fde047', fg: '#3a3000' },
+  cyan:   { bg: '#67e8f9', fg: '#0a2a30' },
+};
+
+const DAY_LABELS = ['Fredag 6. november', 'Lørdag 7. november', 'Søndag 8. november'];
+const DAY_SHORT  = ['Fredag', 'Lørdag', 'Søndag'];
+
+// ── Initial data ───────────────────────────────────────────────────
+const DEFAULT_DATA = {"schedules":[{"day":"Day 1","date":"Friday, January 24, 2026","startTime":"09:00","endTime":"17:30","header":"Fredag","halls":[{"id":1,"name":"Grand Hall","type":"grand","session_title":"","session_chair":"","slots":[{"time":"09:00","duration":30,"lecture":{"id":"d1-grand-1","color":"green","title":"Åpning","speaker":"Siddis turn og VSOP herrekor","duration":30}},{"time":"09:30","duration":30,"lecture":{"id":"d1-grand-2","color":"green","title":"Tendinopathies in 2026 - An update of our clinical understanding","speaker":"Seth O'Neill","duration":30}},{"time":"10:00","duration":30,"lecture":{"id":"d1-grand-3","color":"teal","title":"Ortopedisk kirurgi i 2026","speaker":"Asle Kjellsen","duration":30}},{"time":"10:30","duration":30,"lecture":{"id":"d1-pause-1","color":"pink","title":"Pause","speaker":"Besøke utstillere","duration":30}},{"time":"11:00","duration":30,"lecture":{"id":"d1-h-4","color":"blue","title":"Bare et overtråkk? – Diagnostiske blindsoner","speaker":"Mette Andersen","duration":30}},{"time":"11:30","duration":30,"lecture":{"id":"d1-h-5","color":"teal","title":"Endofibrose - Hva er det og hvem får det?","speaker":"Andreas Reite","duration":30}},{"time":"12:00","duration":30,"lecture":{"id":"d1-h-6","color":"orange","title":"Rygg - Placebo","speaker":"Brox og Bjorland","duration":30}},{"time":"12:30","duration":75,"lecture":{"id":"d1-lunch","color":"pink","title":"Lunsj","speaker":"Besøke utstillere","duration":75}}]},{"id":2,"name":"Hall 1","type":"hall1","session_title":"Rygg","session_chair":"","slots":[{"time":"13:45","duration":20,"lecture":{"id":"d1-h1-1","color":"orange","title":"Operasjon eller konservativ behandling av ryggplager","speaker":"Kjersti Storheim","duration":20}},{"time":"14:05","duration":20,"lecture":{"id":"d1-h1-2","color":"orange","title":"Hvem skal henvises til operasjon, og hvor?","speaker":"Christian Hellum","duration":20}},{"time":"14:25","duration":20,"lecture":{"id":"d1-h1-3","color":"orange","title":"Hvordan forstå og behandle langvarig smerte?","speaker":"Silje Reme","duration":20}},{"time":"14:45","duration":30,"lecture":{"id":"d1-h1-4","color":"orange","title":"Pain Reprocessing Therapy","speaker":"Silje Reme","duration":30}},{"time":"15:15","duration":30,"lecture":{"id":"d1-h1-p","color":"pink","title":"Pause","speaker":"Besøke utstillere","duration":30}},{"time":"15:45","duration":20,"lecture":{"id":"d1-h1-5","color":"pink","title":"Idrettspsykologi","speaker":"Anne Marte Pensgaard","duration":20}},{"time":"16:05","duration":20,"lecture":{"id":"d1-h1-6","color":"pink","title":"Idrettspsykologi del 2","speaker":"Anne Marte Pensgaard","duration":20}},{"time":"16:30","duration":15,"lecture":{"id":"d1-fri-1","color":"teal","title":"Frie foredrag – Ingen endring i kneleddslaksitet etter PCL-skade","speaker":"K Bredland m.fl.","duration":15}},{"time":"16:45","duration":15,"lecture":{"id":"d1-fri-2","color":"teal","title":"Frie foredrag – Alder ved kirurgi og revisjonsrisiko etter ACL","speaker":"M Tønder m.fl.","duration":15}},{"time":"17:00","duration":15,"lecture":{"id":"d1-fri-3","color":"teal","title":"Frie foredrag – Return to play etter ACL og menisk kirurgi","speaker":"T Ødegaard","duration":15}},{"time":"17:15","duration":15,"lecture":{"id":"d1-fri-4","color":"teal","title":"Frie foredrag – Nerve Injury in Paediatric Forearm Fractures","speaker":"T Ødrup m.fl.","duration":15}}]},{"id":3,"name":"Hall 2","type":"hall2","session_title":"Tendinopati & fotball","session_chair":"","slots":[{"time":"13:45","duration":20,"lecture":{"id":"d1-h2-1","color":"green","title":"Understanding tendon pain through classification","speaker":"Seth O'Neill","duration":20}},{"time":"14:05","duration":20,"lecture":{"id":"d1-h2-2","color":"green","title":"Beyond load management","speaker":"Seth O'Neill","duration":20}},{"time":"14:25","duration":20,"lecture":{"id":"d1-h2-3","color":"teal","title":"Tunge vekter, raske fibre?","speaker":"Thomas Bjørnsen","duration":20}},{"time":"14:45","duration":30,"lecture":{"id":"d1-h2-4","color":"teal","title":"Fotballmedisin - Viking FC","speaker":"Hallvard Grova","duration":30}},{"time":"15:15","duration":30,"lecture":{"id":"d1-h2-p","color":"pink","title":"Pause","speaker":"Besøke utstillere","duration":30}},{"time":"15:45","duration":20,"lecture":{"id":"d1-h2-5","color":"blue","title":"Å jakte 1% forbedring","speaker":"Ina Garthe","duration":20}},{"time":"16:05","duration":20,"lecture":{"id":"d1-h2-6","color":"blue","title":"Hva med de 1% i toppidretten","speaker":"Ina Garthe og Paul Solberg","duration":20}}]}]},{"day":"Day 2","date":"Saturday, January 25, 2026","startTime":"08:30","endTime":"17:45","header":"Lørdag","halls":[{"id":1,"name":"Grand Hall","type":"grand","session_title":"","session_chair":"","slots":[{"time":"08:30","duration":30,"lecture":{"id":"d2-grand-1","color":"pink","title":"Bone stress Injuries - What is our current understanding in 2026?","speaker":"Stuart Warden","duration":30}},{"time":"09:00","duration":30,"lecture":{"id":"d2-grand-2","color":"pink","title":"Hvorfor dør heltene våre? - Risiko ved langvarig trening","speaker":"Magnus Bjørkavoll-Bergseth","duration":30}},{"time":"09:30","duration":30,"lecture":{"id":"d2-grand-3","color":"pink","title":"Hjerte og liv - Gevinst av fysisk aktivitet i relasjon til alder og kjønn","speaker":"Stein Ørn","duration":30}},{"time":"10:00","duration":30,"lecture":{"id":"d2-pause-1","color":"pink","title":"Pause","speaker":"Besøke utstillere","duration":30}}]},{"id":2,"name":"Hall 1","type":"hall1","session_title":"Leggplager & stressreaksjoner","session_chair":"","slots":[{"time":"10:45","duration":20,"lecture":{"id":"d2-h1-1","color":"teal","title":"Langvarige leggplager - Trykkmåling","speaker":"Aina Emaus","duration":20}},{"time":"11:05","duration":20,"lecture":{"id":"d2-h1-2","color":"teal","title":"Kirurgiske alternativer ved leggplager","speaker":"Asle Kjellsen","duration":20}},{"time":"11:25","duration":20,"lecture":{"id":"d2-h1-3","color":"teal","title":"Kirurgi ved senepatologi","speaker":"Asle Kjellsen","duration":20}},{"time":"11:45","duration":20,"lecture":{"id":"d2-h1-4","color":"teal","title":"Rehabilitering av leggplager","speaker":"Foreleser kommer","duration":20}},{"time":"12:05","duration":25,"lecture":{"id":"d2-h1-5","color":"green","title":"Exercise is Medicine","speaker":"EiM","duration":25}},{"time":"12:30","duration":90,"lecture":{"id":"d2-lunch","color":"pink","title":"Lunsj","speaker":"Besøke utstillere","duration":90}},{"time":"14:00","duration":20,"lecture":{"id":"d2-h1-6","color":"blue","title":"Stressreaksjoner - Hvem får det og hvorfor?","speaker":"Stuart Warden","duration":20}},{"time":"14:20","duration":20,"lecture":{"id":"d2-h1-7","color":"blue","title":"Stressreaksjoner - konservativ behandling","speaker":"Stuart Warden","duration":20}},{"time":"14:40","duration":20,"lecture":{"id":"d2-h1-8","color":"teal","title":"Stressreaksjoner - hvem opereres?","speaker":"Anine Nordstrøm / Ove Talsnes","duration":20}},{"time":"15:00","duration":30,"lecture":{"id":"d2-h1-9","color":"teal","title":"Paneldebatt","speaker":"Stuart Warden, Ove Talsnes, Asle Kjellsen, Anine Nordstrøm","duration":30}},{"time":"15:30","duration":30,"lecture":{"id":"d2-h1-p","color":"pink","title":"Pause","speaker":"Besøke utstillere","duration":30}},{"time":"16:00","duration":15,"lecture":{"id":"d2-fri-1","color":"teal","title":"Frie foredrag – #ReadyToPlayJr.","speaker":"C Christensen m.fl.","duration":15}},{"time":"16:15","duration":15,"lecture":{"id":"d2-fri-2","color":"teal","title":"Frie foredrag – Exercise-induced bronchoconstriction in swimmers","speaker":"M Rosenfeldt m.fl.","duration":15}},{"time":"16:30","duration":15,"lecture":{"id":"d2-fri-3","color":"teal","title":"Frie foredrag – Nærmere Best ved norske idrettsskoler","speaker":"H Heiestad m.fl.","duration":15}},{"time":"16:45","duration":15,"lecture":{"id":"d2-fri-4","color":"teal","title":"Frie foredrag – Lung function i adolescent swimmers","speaker":"S Pedersen m.fl.","duration":15}},{"time":"17:00","duration":15,"lecture":{"id":"d2-fri-5","color":"teal","title":"Frie foredrag – Muskel-/skjelettskader i rekruttutdanning","speaker":"J Seljevoll","duration":15}},{"time":"17:15","duration":15,"lecture":{"id":"d2-fri-6","color":"teal","title":"Frie foredrag – Muskelskader blant norsk militært personell","speaker":"T Wangensteen-Haugen m.fl.","duration":15}},{"time":"17:30","duration":15,"lecture":{"id":"d2-nimf","color":"pink","title":"NIMF/FIA Forskningspris 2025","speaker":"Prisforedrag 2026","duration":15}}]},{"id":3,"name":"Hall 2","type":"hall2","session_title":"Hjertestans & Strong mama","session_chair":"","slots":[{"time":"10:45","duration":20,"lecture":{"id":"d2-h2-1","color":"pink","title":"Hjertestans - Erfaring fra en førstehjelper","speaker":"Merete Aarsland Fosdahl","duration":20}},{"time":"11:05","duration":20,"lecture":{"id":"d2-h2-2","color":"pink","title":"Hjertestans, RAKOS-oppdatering","speaker":"Conrad Bjørshol","duration":20}},{"time":"11:25","duration":20,"lecture":{"id":"d2-h2-3","color":"pink","title":"Hjertestans - Nyeste retningslinjer","speaker":"Stein Ørn","duration":20}},{"time":"11:45","duration":20,"lecture":{"id":"d2-h2-4","color":"pink","title":"Hjertestans i idrett - to screen og not to screen","speaker":"Christine Bjørkvik Erevik","duration":20}},{"time":"12:05","duration":25,"lecture":{"id":"d2-h2-5","color":"orange","title":"God behandling - Dårlig dopingsak","speaker":"Astrid Gjelstad, Antidoping Norge","duration":25}},{"time":"12:30","duration":90,"lecture":{"id":"d2-lunch2","color":"pink","title":"Lunsj","speaker":"Besøke utstillere","duration":90}},{"time":"14:00","duration":20,"lecture":{"id":"d2-h2-6","color":"green","title":"Strong mama prosjektet del 1","speaker":"Emilie Dalhaug","duration":20}},{"time":"14:20","duration":20,"lecture":{"id":"d2-h2-7","color":"green","title":"Strong mama prosjektet del 2","speaker":"Emilie Dalhaug","duration":20}},{"time":"14:40","duration":20,"lecture":{"id":"d2-h2-8","color":"pink","title":"Kan trent morsmelk forebygge barnefedme?","speaker":"Trine Moholdt","duration":20}},{"time":"15:00","duration":30,"lecture":{"id":"d2-h2-9","color":"teal","title":"Gull i munn - om munnhelse i toppidrett","speaker":"Randi Krog Oftedal","duration":30}},{"time":"15:30","duration":30,"lecture":{"id":"d2-h2-p","color":"pink","title":"Pause","speaker":"Besøke utstillere","duration":30}}]}]},{"day":"Day 3","date":"Sunday, January 26, 2026","startTime":"09:00","endTime":"14:30","header":"Søndag","halls":[{"id":1,"name":"Grand Hall","type":"grand","session_title":"","session_chair":"","slots":[{"time":"09:00","duration":45,"lecture":{"id":"d3-1","color":"blue","title":"Erfaringer fra fotball VM","speaker":"Støtteapparatet under fotball VM","duration":45}},{"time":"09:45","duration":15,"lecture":{"id":"d3-2","color":"blue","title":"Diskusjon og spørsmål fra fotball VM","speaker":"Ola Sand og Thomas Ødegaard","duration":15}},{"time":"10:00","duration":30,"lecture":{"id":"d3-3","color":"teal","title":"Return to sport","speaker":"Foreleser kommer","duration":30}},{"time":"10:30","duration":30,"lecture":{"id":"d3-4","color":"pink","title":"TBA","speaker":"","duration":30}},{"time":"11:00","duration":60,"lecture":{"id":"d3-5","color":"pink","title":"Pause","speaker":"Besøke utstillere","duration":60}},{"time":"12:00","duration":30,"lecture":{"id":"d3-6","color":"green","title":"Bak gullet - Menneskene, valgene og laget","speaker":"Unn Merethe Jæger","duration":30}},{"time":"12:30","duration":30,"lecture":{"id":"d3-7","color":"pink","title":"Perspectives on lumbar bone stress injuries","speaker":"Nicolay Morland","duration":30}},{"time":"13:00","duration":90,"lecture":{"id":"d3-lunch","color":"purple","title":"Lunsj","speaker":"","duration":90}}]}]}]};
+
+// ── State ──────────────────────────────────────────────────────────
+let data = null;
+let activeDay = 0;
+let editCtx = null; // {di, hi, si}
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('imhk_timetable');
+    if (s) { data = JSON.parse(s); return; }
+  } catch(e) {}
+  data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+}
+
+function saveState() {
+  try { localStorage.setItem('imhk_timetable', JSON.stringify(data)); } catch(e) {}
+  document.getElementById('saveStatus').textContent = '● Saved ' + new Date().toLocaleTimeString('no-NO', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+loadState();
+
+// ── Render ─────────────────────────────────────────────────────────
+function render() {
+  renderLectureBank();
+  renderSchedule();
+}
+
+function renderLectureBank() {
+  // Collect all unique lectures from data
+  const seen = new Set();
+  const lecs = [];
+  data.schedules.forEach(day => {
+    day.halls.forEach(hall => {
+      hall.slots.forEach(slot => {
+        if (slot.lecture && slot.lecture.title) {
+          const key = slot.lecture.title;
+          if (!seen.has(key)) {
+            seen.add(key);
+            lecs.push(slot.lecture);
+          }
+        }
+      });
+    });
+  });
+
+  const el = document.getElementById('lectureBank');
+  el.innerHTML = lecs.slice(0, 20).map(l => {
+    const c = COLORS[l.color] || COLORS.teal;
+    return `<div class="lec-card" style="background:${c.bg};color:${c.fg}" draggable="true">
+      <div class="lec-card-title">${esc(l.title)}</div>
+      ${l.speaker ? `<div class="lec-card-speaker">${esc(l.speaker)}</div>` : ''}
+      <div class="lec-card-dur">⏱ ${l.duration} min</div>
+    </div>`;
+  }).join('');
+}
+
+function renderSchedule() {
+  const area = document.getElementById('scheduleArea');
+  const days = data.schedules;
+
+  let html = '<div class="day-tabs">';
+  days.forEach((day, di) => {
+    const label = ['Fredag','Lørdag','Søndag'][di] || day.header || `Dag ${di+1}`;
+    const sub = ['Friday','Saturday','Sunday'][di] || '';
+    html += `<div class="day-tab ${di===activeDay?'active':''}" onclick="switchDay(${di})">
+      Day ${di+1}<br><span class="day-tab-sub">${label}</span>
+    </div>`;
+  });
+  html += '</div>';
+
+  const day = days[activeDay];
+  const fullLabel = DAY_LABELS[activeDay] || day.header;
+  html += `<div class="day-body">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between">
+      <div>
+        <div class="day-title">Day ${activeDay+1}</div>
+        <div class="day-date">${day.date || ''}</div>
+        <div class="day-hours">${day.startTime || ''} – ${day.endTime || ''}</div>
+      </div>
+      <button class="add-grand-btn" onclick="addHall(${activeDay})">+ Add Grand Hall</button>
+    </div>
+    <div class="day-label-row">
+      <div class="day-label-bar"></div>
+      <div class="day-label-text">${fullLabel}</div>
+    </div>
+    <button class="add-header-btn" onclick="addDayLabel(${activeDay})">+ Add header for this day</button>
+  `;
+
+  // Group halls: grand first, then parallel pairs
+  const halls = day.halls;
+  const grand = halls.filter(h => h.type === 'grand');
+  const parallel = halls.filter(h => h.type !== 'grand');
+
+  grand.forEach((hall, localIdx) => {
+    const hi = halls.indexOf(hall);
+    html += renderHallBlock(day, activeDay, hall, hi, 'grand');
+  });
+
+  if (parallel.length > 0) {
+    html += '<div class="parallel-halls">';
+    parallel.forEach((hall, localIdx) => {
+      const hi = halls.indexOf(hall);
+      html += `<div class="hall-col">${renderHallBlock(day, activeDay, hall, hi, 'parallel')}</div>`;
+    });
+    html += '</div>';
+  }
+
+  html += '</div>';
+  area.innerHTML = html;
+}
+
+function hallDisplayName(hall) {
+  if (hall.type === 'grand') return 'Grand Hall';
+  if (hall.type === 'hall1') return 'Energy Hall 1+2';
+  if (hall.type === 'hall2') return 'Energy Hall 3';
+  return hall.name || hall.type;
+}
+
+function renderHallBlock(day, di, hall, hi, mode) {
+  const name = hallDisplayName(hall);
+  const headerClass = mode === 'grand' ? 'hall-header-grand' : 'hall-header-parallel';
+  let html = `<div class="hall-block">
+    <div class="hall-header ${headerClass}">
+      <span>${name}</span>
+      <button class="hall-del-btn" onclick="deleteHall(${di},${hi})" title="Slett sal">🗑</button>
+    </div>`;
+
+  if (hall.session_title || hall.session_chair) {
+    html += `<div class="session-label">
+      <span>📋 ${esc(hall.session_title || '')}${hall.session_chair ? ' · Møteleder: ' + esc(hall.session_chair) : ''}</span>
+    </div>`;
+  }
+
+  html += '<div class="hall-col-inner">';
+  (hall.slots || []).forEach((slot, si) => {
+    html += renderSlotRow(di, hi, si, slot);
+  });
+  html += '</div>';
+
+  html += `<div style="padding:8px 2px">
+    <button class="btn btn-outline btn-sm" style="width:100%" onclick="addSlot(${di},${hi})">+ Legg til slot</button>
+  </div>`;
+  html += '</div>';
+  return html;
+}
+
+function renderSlotRow(di, hi, si, slot) {
+  const lec = slot.lecture || {};
+  const c = COLORS[lec.color] || COLORS.teal;
+  const dur = slot.duration || lec.duration || 15;
+  return `<div class="slot-row" id="slot-${di}-${hi}-${si}">
+    <div class="slot-meta">
+      <span class="slot-time">${esc(slot.time||'')}</span>
+      <span class="slot-dur">(${dur} min)</span>
+      <button class="session-btn" onclick="openSessionEdit(${di},${hi},${si})">+ Session</button>
+      <div class="slot-controls">
+        <button class="slot-ctrl-btn slot-ctrl-plus" title="Legg til slot etter" onclick="insertSlotAfter(${di},${hi},${si})">+</button>
+        <button class="slot-ctrl-btn slot-ctrl-minus" title="Slett slot" onclick="deleteSlot(${di},${hi},${si})">−</button>
+        <button class="slot-drag-btn" title="Dra">⠿</button>
+      </div>
+    </div>
+    ${lec.title ? `<div class="lecture-block" style="background:${c.bg};color:${c.fg}" onclick="openEdit(${di},${hi},${si})">
+      <div class="lecture-title">${esc(lec.title)}</div>
+      ${lec.speaker ? `<div class="lecture-speaker">${esc(lec.speaker)}</div>` : ''}
+      <div class="lecture-dur">⏱ ${dur} min</div>
+      <div class="lecture-edit-overlay">✏️ Rediger</div>
+    </div>` : `<div style="padding:4px 2px;color:var(--fg3);font-size:11px;font-style:italic">Tom slot — klikk for å redigere</div>`}
+  </div>`;
+}
+
+// ── Interactions ───────────────────────────────────────────────────
+function switchDay(di) {
+  activeDay = di;
+  renderSchedule();
+}
+
+function openEdit(di, hi, si) {
+  const slot = data.schedules[di].halls[hi].slots[si];
+  const lec = slot.lecture || {};
+  editCtx = {di, hi, si};
+  document.getElementById('editTitle').value = lec.title || '';
+  document.getElementById('editSpeaker').value = lec.speaker || '';
+  document.getElementById('editTime').value = slot.time || '';
+  document.getElementById('editDur').value = slot.duration || lec.duration || 20;
+  document.getElementById('editSessionTitle').value = lec.session_title || '';
+  document.getElementById('editSessionChair').value = lec.session_chair || '';
+  renderColorSwatches(lec.color || 'teal');
+  document.getElementById('editModal').hidden = false;
+}
+
+function openSessionEdit(di, hi, si) {
+  openEdit(di, hi, si);
+  // Focus session fields
+  setTimeout(() => document.getElementById('editSessionTitle').focus(), 50);
+}
+
+const SWATCH_COLORS = ['green','teal','blue','pink','orange','purple','yellow','cyan'];
+let selectedColor = 'teal';
+function renderColorSwatches(current) {
+  selectedColor = current;
+  const el = document.getElementById('colorSwatches');
+  el.innerHTML = SWATCH_COLORS.map(c => {
+    const col = COLORS[c];
+    return `<div class="color-swatch ${c===current?'selected':''}" style="background:${col.bg}"
+      onclick="selectColor('${c}')"></div>`;
+  }).join('');
+}
+function selectColor(c) {
+  selectedColor = c;
+  renderColorSwatches(c);
+}
+
+function saveEdit() {
+  if (!editCtx) return;
+  const {di, hi, si} = editCtx;
+  const slot = data.schedules[di].halls[hi].slots[si];
+  if (!slot.lecture) slot.lecture = {};
+  slot.lecture.title   = document.getElementById('editTitle').value;
+  slot.lecture.speaker = document.getElementById('editSpeaker').value;
+  slot.lecture.color   = selectedColor;
+  slot.lecture.duration = +document.getElementById('editDur').value || 20;
+  slot.lecture.session_title = document.getElementById('editSessionTitle').value;
+  slot.lecture.session_chair = document.getElementById('editSessionChair').value;
+  slot.time     = document.getElementById('editTime').value;
+  slot.duration = slot.lecture.duration;
+  document.getElementById('editModal').hidden = true;
+  saveState();
+  renderSchedule();
+  toast('Lagret ✓');
+}
+
+function deleteCurrentSlot() {
+  if (!editCtx) return;
+  const {di, hi, si} = editCtx;
+  data.schedules[di].halls[hi].slots.splice(si, 1);
+  document.getElementById('editModal').hidden = true;
+  saveState();
+  renderSchedule();
+  toast('Slettet');
+}
+
+function deleteSlot(di, hi, si) {
+  data.schedules[di].halls[hi].slots.splice(si, 1);
+  saveState();
+  renderSchedule();
+}
+
+function insertSlotAfter(di, hi, si) {
+  const slots = data.schedules[di].halls[hi].slots;
+  const prev = slots[si];
+  const [h,m] = (prev.time||'09:00').split(':').map(Number);
+  const dur = prev.duration || 15;
+  const total = h*60 + m + dur;
+  const newTime = `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+  slots.splice(si+1, 0, {time: newTime, duration: 20, lecture: {id:'new-'+Date.now(), title:'', speaker:'', color:'teal', duration:20}});
+  saveState();
+  renderSchedule();
+  // open edit on new slot
+  setTimeout(() => openEdit(di, hi, si+1), 50);
+}
+
+function addSlot(di, hi) {
+  const slots = data.schedules[di].halls[hi].slots;
+  let newTime = '09:00';
+  if (slots.length) {
+    const last = slots[slots.length-1];
+    const [h,m] = (last.time||'09:00').split(':').map(Number);
+    const dur = last.duration || 20;
+    const total = h*60 + m + dur;
+    newTime = `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+  }
+  slots.push({time: newTime, duration: 20, lecture: {id:'new-'+Date.now(), title:'', speaker:'', color:'teal', duration:20}});
+  saveState();
+  renderSchedule();
+  setTimeout(() => openEdit(di, hi, slots.length-1), 50);
+}
+
+function addHall(di) {
+  const halls = data.schedules[di].halls;
+  const existingParallel = halls.filter(h => h.type !== 'grand');
+  const newType = existingParallel.length === 0 ? 'hall1' : 'hall' + (existingParallel.length+1);
+  halls.push({id: Date.now(), name: 'Ny sal', type: newType, session_title: '', session_chair: '', slots: []});
+  saveState();
+  renderSchedule();
+}
+
+function deleteHall(di, hi) {
+  if (!confirm('Slette denne salen og alle dens slots?')) return;
+  data.schedules[di].halls.splice(hi, 1);
+  saveState();
+  renderSchedule();
+}
+
+function addDayLabel(di) {
+  const label = prompt('Dag-label (f.eks. Fredag):');
+  if (label) { data.schedules[di].header = label; saveState(); renderSchedule(); }
+}
+
+// ── Export / Import ────────────────────────────────────────────────
+function exportJSON() {
+  document.getElementById('exportTextarea').value = JSON.stringify(data, null, 2);
+  document.getElementById('exportModal').hidden = false;
+}
+function copyExport() {
+  navigator.clipboard.writeText(document.getElementById('exportTextarea').value)
+    .then(() => toast('Kopiert ✓'))
+    .catch(() => { document.getElementById('exportTextarea').select(); toast('Velg og kopier manuelt'); });
+}
+function importJSON() { document.getElementById('importModal').hidden = false; }
+function loadFile(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => { document.getElementById('importTextarea').value = ev.target.result; };
+  r.readAsText(file);
+  e.target.value = '';
+}
+function doImport() {
+  try {
+    data = JSON.parse(document.getElementById('importTextarea').value);
+    saveState();
+    activeDay = 0;
+    document.getElementById('importModal').hidden = true;
+    render();
+    toast('Importert ✓');
+  } catch(e) { toast('Feil: ugyldig JSON'); }
+}
+
+function exportPDF() {
+  toast('PDF-eksport: bruk PDF-knappen i make_program.py, eller eksporter JSON og kjør skriptet.');
+}
+
+function restoreSchedule() {
+  if (!confirm('Gjenopprett opprinnelig timeplan? (fjerner lokale endringer)')) return;
+  data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  saveState();
+  activeDay = 0;
+  render();
+  toast('Gjenopprettet ✓');
+}
+
+function resetAll() {
+  if (!confirm('Nullstill alt? Dette kan ikke angres.')) return;
+  localStorage.removeItem('imhk_timetable');
+  data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  saveState();
+  activeDay = 0;
+  render();
+  toast('Nullstilt ✓');
+}
+
+function openAddLecture() {
+  // Add empty slot to first hall of active day
+  const halls = data.schedules[activeDay].halls;
+  if (halls.length) addSlot(activeDay, 0);
+}
+
+// ── Utils ──────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ── Init ───────────────────────────────────────────────────────────
+render();
+</script>
